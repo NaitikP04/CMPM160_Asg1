@@ -2,9 +2,10 @@
 // Vertex shader program
 var VSHADER_SOURCE = `
   attribute vec4 a_Position;
+  uniform float u_Size;
   void main() {
     gl_Position = a_Position; 
-    gl_PointSize = 10.0; 
+    gl_PointSize = u_Size; 
   }`
 
 // Fragment shader program
@@ -16,14 +17,15 @@ var FSHADER_SOURCE =`
   }`
 
 // Global variables
-let canvas, gl, a_Position, u_FragColor;
+let canvas, gl, a_Position, u_FragColor, u_Size;
 
 function setupWebGL() {
   // Retrieve <canvas> element
   canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  gl = getWebGLContext(canvas);
+  // gl = getWebGLContext(canvas);
+  gl = canvas.getContext("webgl", {preserveDrawingBuffer:true});
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;
@@ -50,16 +52,115 @@ function connectVariablesToGLSL() {
     console.log('Failed to get the storage location of u_FragColor');
     return;
   }
+
+  // Get the storage location of u_Size
+  u_Size = gl.getUniformLocation(gl.program, 'u_Size');
+  if (!u_Size) {
+    console.log('Failed to get the storage location of u_Size');
+    return;
+  }
 }
 
+// Constants
+const POINT = 0;
+const TRIANGLE = 1;
+const CIRCLE = 2;
+
+// Global UI variables
+let g_selectedSize = 5; // default point size
+let g_selectedSegments = 10; // default number of segments for circle
+let g_selectedColor = [1.0, 1.0, 1.0, 1.0]; // white
+let g_selectedType = POINT; // default shape type
+
+// Actions for HTML UI
+function addActionsforHtmlUI(){
+
+  // Button Events 
+  document.getElementById('green').onclick = function() { g_selectedColor = [0.0, 1.0, 0.0, 1.0]; };
+  document.getElementById('red').onclick = function() { g_selectedColor = [1.0, 0.0, 0.0, 1.0]; };
+  document.getElementById('blue').onclick = function() { g_selectedColor = [0.0, 0.0, 1.0, 1.0]; };
+
+  // Clear Button Event
+  document.getElementById('clear').onclick = function() { g_shapesList = []; renderAllShapes(); };
+
+  // Shape Button Events
+  document.getElementById('pointButton').onclick = function() { g_selectedType = POINT};
+  document.getElementById('triangleButton').onclick = function() { g_selectedType = TRIANGLE};
+  document.getElementById('circleButton').onclick = function() { g_selectedType = CIRCLE};
+
+  // Drawing Button Event
+  document.getElementById('makeDrawing').onclick = function() { g_shapesList = []; renderAllShapes(); makeDrawing();};
+
+  // Slider Events
+  const updateColorAndDisplay = (sliderId, colorIndex, displayId) => {
+    const slider = document.getElementById(sliderId);
+    const display = document.getElementById(displayId);
+
+    slider.addEventListener('mouseup', function() {
+      const value = this.value / 100;
+      g_selectedColor[colorIndex] = value;
+      display.textContent = value.toFixed(2);
+    });
+  };
+
+  updateColorAndDisplay('redSlide', 0, 'redValue');
+  updateColorAndDisplay('greenSlide', 1, 'greenValue');
+  updateColorAndDisplay('blueSlide', 2, 'blueValue');
+
+  // Size Slider Events
+  const sizeSlider = document.getElementById('sizeSlide');
+  const sizeDisplay = document.getElementById('sizeValue');
+  sizeSlider.addEventListener('mouseup', function() {
+    g_selectedSize = this.value;
+    sizeDisplay.textContent = this.value;
+  });
+
+  // Segment Slider Events
+  const segmentSlider = document.getElementById('segSlide');
+  const segmentDisplay = document.getElementById('segValue');
+  segmentSlider.addEventListener('mouseup', function() {
+    g_selectedSegments = this.value;
+    segmentDisplay.textContent = this.value;
+  });
+
+}
+function makeDrawing() {
+  // Make an equilateral triangle
+  let tri = new Triangle();
+  tri.position = [0, 0, 0];
+  tri.color = [1.0, 1.0, 1.0, 1.0];
+  tri.size = 30.0;
+  tri.setVertices(
+      [-0.866, -0.5],  // bottom left
+      [0.866, -0.5],   // bottom right
+      [0, 1]           // top
+  );
+  g_shapesList.push(tri);
+  
+  // Make a triangle pointing down
+  let tri2 = new Triangle();
+  tri2.position = [0.5, 0, 0];
+  tri2.color = [1.0, 0.0, 0.0, 1.0];
+  tri2.size = 30.0;
+  tri2.setVertices(
+      [-1, 1],     // top left
+      [1, 1],      // top right
+      [0, -1]      // bottom middle
+  );
+  g_shapesList.push(tri2);
+
+  renderAllShapes();
+}
 function main() {
 
   setupWebGL();
   connectVariablesToGLSL();
 
+  addActionsforHtmlUI();
 
   // Register function (event handler) to be called on a mouse press
-  canvas.onmousedown = click(ev);
+  canvas.onmousedown = click;
+  canvas.onmousemove = function(ev){ if (ev.buttons==1) click(ev); };
 
   // Specify the color for clearing <canvas>
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -68,9 +169,37 @@ function main() {
   gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
-var g_points = [];  // The array for the position of a mouse press
-var g_colors = [];  // The array to store the color of a point
+var g_shapesList = [];
+
+// var g_points = [];  // The array for the position of a mouse press
+// var g_colors = [];  // The array to store the color of a point
+// var g_sizes = [];  // The array to store the size of a point
+
 function click(ev) {
+
+  // Extract event click and convert to WebGL coordinates
+  [x, y] = convertCoordinatesEvenToGL(ev);
+
+  let point;
+  if (g_selectedType == POINT) {
+    point = new Point();
+  } else if (g_selectedType == TRIANGLE) {
+    point = new Triangle();
+  } else { 
+    point = new Circle();
+  }
+  point.position = [x, y];
+  point.color = g_selectedColor.slice();
+  point.size = g_selectedSize;
+  if (point.type == 'circle') point.segments = g_selectedSegments;
+  g_shapesList.push(point);
+
+  // Draw all the shapes that are supposed to be on the canvas
+  renderAllShapes();
+
+}
+
+function convertCoordinatesEvenToGL(ev){
   var x = ev.clientX; // x coordinate of a mouse pointer
   var y = ev.clientY; // y coordinate of a mouse pointer
   var rect = ev.target.getBoundingClientRect();
@@ -78,30 +207,35 @@ function click(ev) {
   x = ((x - rect.left) - canvas.width/2)/(canvas.width/2);
   y = (canvas.height/2 - (y - rect.top))/(canvas.height/2);
 
-  // Store the coordinates to g_points array
-  g_points.push([x, y]);
-  // Store the coordinates to g_points array
-  if (x >= 0.0 && y >= 0.0) {      // First quadrant
-    g_colors.push([1.0, 0.0, 0.0, 1.0]);  // Red
-  } else if (x < 0.0 && y < 0.0) { // Third quadrant
-    g_colors.push([0.0, 1.0, 0.0, 1.0]);  // Green
-  } else {                         // Others
-    g_colors.push([1.0, 1.0, 1.0, 1.0]);  // White
-  }
+  return ([x, y]);
+}
+
+function renderAllShapes(){
+
+  // Get start time
+  var startTime = performance.now();
 
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT);
 
-  var len = g_points.length;
-  for(var i = 0; i < len; i++) {
-    var xy = g_points[i];
-    var rgba = g_colors[i];
+  // var len = g_points.length;
+  var len = g_shapesList.length;
 
-    // Pass the position of a point to a_Position variable
-    gl.vertexAttrib3f(a_Position, xy[0], xy[1], 0.0);
-    // Pass the color of a point to u_FragColor variable
-    gl.uniform4f(u_FragColor, rgba[0], rgba[1], rgba[2], rgba[3]);
-    // Draw
-    gl.drawArrays(gl.POINTS, 0, 1);
+  for(var i = 0; i < len; i++) {
+    g_shapesList[i].render();
   }
+
+  var duration = performance.now() - startTime;
+  sendTextToHTML("numdot: " + len + " ms: " + Math.floor(duration) + " fps: " + Math.floor(10000/duration)/10, "numdot");
+
+}
+
+// Set text of a HTML element
+function sendTextToHTML(text, htmlID) {
+  var htmlElm = document.getElementById(htmlID);
+  if (!htmlElm) {
+    console.log('Failed to retrieve the <' + htmlID + '> element');
+    return;
+  }
+  htmlElm.innerHTML = text;
 }
