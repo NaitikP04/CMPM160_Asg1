@@ -107,6 +107,14 @@ function addActionsforHtmlUI(){
   updateColorAndDisplay('greenSlide', 1, 'greenValue');
   updateColorAndDisplay('blueSlide', 2, 'blueValue');
 
+  const alphaSlider = document.getElementById('alphaSlide');
+  const alphaDisplay = document.getElementById('alphaValue'); 
+  alphaSlider.addEventListener('mouseup', function() {
+    const value = this.value / 100;
+    g_selectedColor[3] = value;
+    alphaDisplay.textContent = value.toFixed(2);
+  });
+
   // Size Slider Events
   const sizeSlider = document.getElementById('sizeSlide');
   const sizeDisplay = document.getElementById('sizeValue');
@@ -124,33 +132,60 @@ function addActionsforHtmlUI(){
   });
 
 }
+
+
 function makeDrawing() {
-  // Make an equilateral triangle
-  let tri = new Triangle();
-  tri.position = [0, 0, 0];
-  tri.color = [1.0, 1.0, 1.0, 1.0];
-  tri.size = 30.0;
-  tri.setVertices(
-      [-0.866, -0.5],  // bottom left
-      [0.866, -0.5],   // bottom right
-      [0, 1]           // top
-  );
-  g_shapesList.push(tri);
-  
-  // Make a triangle pointing down
-  let tri2 = new Triangle();
-  tri2.position = [0.5, 0, 0];
-  tri2.color = [1.0, 0.0, 0.0, 1.0];
-  tri2.size = 30.0;
-  tri2.setVertices(
-      [-1, 1],     // top left
-      [1, 1],      // top right
-      [0, -1]      // bottom middle
-  );
-  g_shapesList.push(tri2);
+  // Define colors for triangles
+  const colors = [
+    [1, 1, 1, 1], // White
+    [1, 0.5, 0, 1], // Orange
+    [0, 0, 0, 1], // Black
+    [0.2, 0.2, 0.2, 1], // Dark Gray
+    [0.6, 0.4, 0.2, 1] // Brown
+  ];
+
+  // Function to create a triangle
+  function createTriangle(v1, v2, v3, position = [0, 0, 0], size = 10, colorIndex = 0) {
+    const tri = new Triangle();
+    tri.position = position;
+    tri.color = colors[colorIndex];
+    tri.size = size;
+    tri.setVertices(v1, v2, v3); 
+    g_shapesList.push(tri);
+  }
+
+  //face
+  createTriangle([-2, 1.5], [2, 1.5], [0, -2.5], [0, 0, 0], 50, 1); // Triangle 1
+  //ears
+  createTriangle([-2, 1.5], [-1, 1.5], [-2.25,2.5], [0, 0, 0], 50, 1); // Triangle 2
+  createTriangle([2, 1.5], [1, 1.5], [2.25,2.5], [0, 0, 0], 50, 1); // Triangle 3
+  createTriangle([-1.75, 1.5], [-1.25, 1.5], [-2, 2.1], [0, 0, 0], 50, 0); // Triangle 4
+  createTriangle([1.75, 1.5], [1.25, 1.5], [2, 2.1], [0, 0, 0], 50, 0); // Triangle 5
+  //eyes
+  createTriangle([-1, 0.7], [-0.6, 0.7], [-1.1, 1], [0, 0, 0], 50, 3); // Triangle 6
+  createTriangle([-0.6, 0.7], [-1.1, 1], [-0.7, 1],[0, 0, 0], 50, 3); // Triangle 7
+  createTriangle([1, 0.7], [0.6, 0.7], [1.1, 1], [0, 0, 0], 50, 3); // Triangle 8
+  createTriangle([0.6, 0.7], [1.1, 1], [0.7, 1],[0, 0, 0], 50, 3); // Triangle 9
+  //fur
+  createTriangle([-1.25, 0], [0, -0.5], [0, -2.5], [0, 0, 0], 50, 0); // Triangle 10
+  createTriangle([1.25, 0], [0, -0.5], [0, -2.5], [0, 0, 0], 50, 0); // Triangle 11
+  //nose
+  createTriangle([-0.3, 0], [0.3, 0], [0, -0.7], [0, 0, 0], 50, 2); // Triangle 12
+  //mouth
+  createTriangle([-0.02, -1.3], [0.02, -1.3], [0, -0.7], [0, 0, 0], 50, 2); // Triangle 13
+  createTriangle([0, -1.3], [-0.3, -1.25], [-0.5, -1.15], [0, 0, 0], 50, 2); // Triangle 14
+  createTriangle([0, -1.3], [0.3, -1.25], [0.5, -1.15], [0, 0, 0], 50, 2); // Triangle 15
+  //paws
+  createTriangle([-2.2, -1], [-1.6, -1], [-1.9, -1.6], [0, 0, 0], 50, 4); // Triangle 16
+  createTriangle([-1.9, -1], [-1.3, -1], [-1.6, -1.6], [0, 0, 0], 50, 4); // Triangle 17
+  createTriangle([-2.2, -1], [-1.3, -1], [-1.75, -0.8], [0, 0, 0], 50, 4); // Triangle 18
+  createTriangle([2.2, -1], [1.6, -1], [1.9, -1.6], [0, 0, 0], 50, 4); // Triangle 19
+  createTriangle([1.9, -1], [1.3, -1], [1.6, -1.6], [0, 0, 0], 50, 4); // Triangle 20
+  createTriangle([2.2, -1], [1.3, -1], [1.75, -0.8], [0, 0, 0], 50, 4); // Triangle 21
 
   renderAllShapes();
 }
+
 function main() {
 
   setupWebGL();
