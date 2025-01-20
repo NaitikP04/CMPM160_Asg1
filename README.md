@@ -1,2 +1,2 @@
 # CMPM160_Asg1
-Paint Program 
+Paint Program by Naitik Poddar

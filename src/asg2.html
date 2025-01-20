@@ -57,10 +57,33 @@
     .slider-container input {
       vertical-align: middle;
     }
+    .image-container {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .image-container img {
+      max-width: 300px;
+      height: auto;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .description {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f0f0f0;
+    }
+    .description h3 {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body onload="main()">
   <h1>WebGL Drawing Tool</h1>
+  <div class="image-container">
+    <img src="foxDrawing.png" alt="My Drawing">
+  </div>
   <canvas id="webgl" width="400" height="400">
     Please use a browser that supports "canvas".
   </canvas>
@@ -75,6 +98,7 @@
     <button type="button" id="pointButton">Point</button>
     <button type="button" id="triangleButton">Triangle</button>
     <button type="button" id="circleButton">Circle</button>
+    <br/>
     <button type="button" id="makeDrawing">Make My Drawing!</button>
   </div>
 
@@ -111,6 +135,18 @@
     </div>
   </div>
 
+  <div class="description">
+    <h3>Description</h3>
+    <p>
+      This WebGL application allows users to draw shapes on a canvas using different colors and sizes. Users can select between points, triangles, and circles, and adjust the color and size of the shapes using sliders. The application also includes a clear button to reset the canvas and a button to generate a predefined drawing.
+    <p>
+      <strong>Name:</strong> Naitik Poddar <br>
+      <strong>Email:</strong> npoddar@ucsc.edu <br> <br>
+      <strong>Grader Notes:</strong><br>
+      I made my drawing manually on desmos because I did not have graphing paper. I first made a very rough version using triangles on normal paper and then translated it into desmos.
+      The Desmos Graph link is <a href="https://www.desmos.com/calculator/3hnurqnici">here</a>. For the "awesome" part, I made a very cool drawing, implemented an Alpha slider and made the UI much nicer.
+    </p>
+</div>
   <script src="../lib/webgl-utils.js"></script>
   <script src="../lib/webgl-debug.js"></script>
   <script src="../lib/cuon-utils.js"></script>
